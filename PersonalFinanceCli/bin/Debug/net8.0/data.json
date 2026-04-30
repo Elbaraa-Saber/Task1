@@ -1,0 +1,25 @@
+{
+  "cards": [
+    {
+      "id": 1,
+      "name": "Financial cushion",
+      "currency": 1,
+      "initialBalance": 0,
+      "isDefault": false,
+      "isCushion": true
+    },
+    {
+      "id": 2,
+      "name": "Russian Card",
+      "currency": 1,
+      "initialBalance": 10000,
+      "isDefault": true,
+      "isCushion": false
+    }
+  ],
+  "transactions": [],
+  "dailyLimits": [],
+  "lastCushionDeclinedDate": null,
+  "hasSeenOnboarding": true,
+  "defaultCardId": "00000000-0000-0000-0000-000000000002"
+}

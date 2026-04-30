@@ -1,0 +1,28 @@
+/Users/lidia/Work/Рефакторинг 2025/Иностранцы/Task1/PersonalFinanceCli/bin/Debug/net8.0/PersonalFinanceCli
+/Users/lidia/Work/Рефакторинг 2025/Иностранцы/Task1/PersonalFinanceCli/bin/Debug/net8.0/PersonalFinanceCli.deps.json
+/Users/lidia/Work/Рефакторинг 2025/Иностранцы/Task1/PersonalFinanceCli/bin/Debug/net8.0/PersonalFinanceCli.runtimeconfig.json
+/Users/lidia/Work/Рефакторинг 2025/Иностранцы/Task1/PersonalFinanceCli/bin/Debug/net8.0/PersonalFinanceCli.dll
+/Users/lidia/Work/Рефакторинг 2025/Иностранцы/Task1/PersonalFinanceCli/bin/Debug/net8.0/PersonalFinanceCli.pdb
+/Users/lidia/Work/Рефакторинг 2025/Иностранцы/Task1/PersonalFinanceCli/obj/Debug/net8.0/PersonalFinanceCli.GeneratedMSBuildEditorConfig.editorconfig
+/Users/lidia/Work/Рефакторинг 2025/Иностранцы/Task1/PersonalFinanceCli/obj/Debug/net8.0/PersonalFinanceCli.AssemblyInfoInputs.cache
+/Users/lidia/Work/Рефакторинг 2025/Иностранцы/Task1/PersonalFinanceCli/obj/Debug/net8.0/PersonalFinanceCli.AssemblyInfo.cs
+/Users/lidia/Work/Рефакторинг 2025/Иностранцы/Task1/PersonalFinanceCli/obj/Debug/net8.0/PersonalFinanceCli.csproj.CoreCompileInputs.cache
+/Users/lidia/Work/Рефакторинг 2025/Иностранцы/Task1/PersonalFinanceCli/obj/Debug/net8.0/PersonalFinanceCli.dll
+/Users/lidia/Work/Рефакторинг 2025/Иностранцы/Task1/PersonalFinanceCli/obj/Debug/net8.0/refint/PersonalFinanceCli.dll
+/Users/lidia/Work/Рефакторинг 2025/Иностранцы/Task1/PersonalFinanceCli/obj/Debug/net8.0/PersonalFinanceCli.pdb
+/Users/lidia/Work/Рефакторинг 2025/Иностранцы/Task1/PersonalFinanceCli/obj/Debug/net8.0/PersonalFinanceCli.genruntimeconfig.cache
+/Users/lidia/Work/Рефакторинг 2025/Иностранцы/Task1/PersonalFinanceCli/obj/Debug/net8.0/ref/PersonalFinanceCli.dll
+D:\files\Task1\PersonalFinanceCli\bin\Debug\net8.0\PersonalFinanceCli.exe
+D:\files\Task1\PersonalFinanceCli\bin\Debug\net8.0\PersonalFinanceCli.deps.json
+D:\files\Task1\PersonalFinanceCli\bin\Debug\net8.0\PersonalFinanceCli.runtimeconfig.json
+D:\files\Task1\PersonalFinanceCli\bin\Debug\net8.0\PersonalFinanceCli.dll
+D:\files\Task1\PersonalFinanceCli\bin\Debug\net8.0\PersonalFinanceCli.pdb
+D:\files\Task1\PersonalFinanceCli\obj\Debug\net8.0\PersonalFinanceCli.GeneratedMSBuildEditorConfig.editorconfig
+D:\files\Task1\PersonalFinanceCli\obj\Debug\net8.0\PersonalFinanceCli.AssemblyInfoInputs.cache
+D:\files\Task1\PersonalFinanceCli\obj\Debug\net8.0\PersonalFinanceCli.AssemblyInfo.cs
+D:\files\Task1\PersonalFinanceCli\obj\Debug\net8.0\PersonalFinanceCli.csproj.CoreCompileInputs.cache
+D:\files\Task1\PersonalFinanceCli\obj\Debug\net8.0\PersonalFinanceCli.dll
+D:\files\Task1\PersonalFinanceCli\obj\Debug\net8.0\refint\PersonalFinanceCli.dll
+D:\files\Task1\PersonalFinanceCli\obj\Debug\net8.0\PersonalFinanceCli.pdb
+D:\files\Task1\PersonalFinanceCli\obj\Debug\net8.0\PersonalFinanceCli.genruntimeconfig.cache
+D:\files\Task1\PersonalFinanceCli\obj\Debug\net8.0\ref\PersonalFinanceCli.dll
