@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Text.RegularExpressions;
 using PersonalFinanceCli.Application.CommandHandlers;
 using PersonalFinanceCli.Application.Repositories;
 using PersonalFinanceCli.Application.Services;
@@ -5,8 +7,6 @@ using PersonalFinanceCli.Domain.Services;
 using PersonalFinanceCli.Domain.ValueObjects;
 using PersonalFinanceCli.Infrastructure.Time;
 using PersonalFinanceCli.Presentation.Parsing;
-using System.Globalization;
-using System.Text.RegularExpressions;
 
 namespace PersonalFinanceCli.Presentation.Rendering;
 
@@ -116,8 +116,8 @@ public sealed class ConsoleUi
 
             try
             {
-                var parsed = _parser.Parse(line);
-                ExecuteParsedCommand(parsed);
+                var parsedCommand = _parser.Parse(line);
+                ExecuteParsedCommand(parsedCommand);
             }
             catch (Exception ex)
             {
@@ -136,11 +136,11 @@ public sealed class ConsoleUi
 
         _onboardingChecked = true;
 
-        var hasSeen = _onboardingStateRepository.GetHasSeenOnboarding();
-        var cushion = _cushionService.FindCushionByName()
+        var hasSeenOnboarding = _onboardingStateRepository.GetHasSeenOnboarding();
+        var cushionCard = _cushionService.FindCushionByName()
             ?? _addTransactionHandler.FindCushionCardLoose()
             ?? _cushionService.FindCushionByContains();
-        if (cushion != null)
+        if (cushionCard is not null)
         {
             _onboardingStateRepository.SetLastCushionDeclinedDate(null);
             _onboardingStateRepository.SetHasSeenOnboarding(true);
@@ -148,13 +148,14 @@ public sealed class ConsoleUi
         }
 
         var cards = _cardRepository.GetAll();
-        if (hasSeen && cards.Count == 0)
+        if (hasSeenOnboarding && cards.Count == 0)
         {
             return;
         }
 
-        var lastDeclined = _onboardingStateRepository.GetLastCushionDeclinedDate();
-        if (lastDeclined.HasValue && _clock.Today < lastDeclined.Value.AddDays(14))
+        var lastCushionDeclinedDate = _onboardingStateRepository.GetLastCushionDeclinedDate();
+        if (lastCushionDeclinedDate.HasValue && 
+            _clock.Today < lastCushionDeclinedDate.Value.AddDays(14))
         {
             return;
         }
@@ -180,28 +181,28 @@ public sealed class ConsoleUi
             return false;
         }
 
-        var root = tokens[0].ToLowerInvariant();
-        var action = tokens[1].ToLowerInvariant();
+        var commandName = tokens[0].ToLowerInvariant();
+        var commandAction = tokens[1].ToLowerInvariant();
 
-        if (root == "card" && action == "add")
+        if (commandName == "card" && commandAction == "add")
         {
             HandleCardAddWizard(tokens);
             return true;
         }
 
-        if (root == "expense" && action == "add")
+        if (commandName == "expense" && commandAction == "add")
         {
             HandleExpenseAddWizard(tokens);
             return true;
         }
 
-        if (root == "income" && action == "add")
+        if (commandName == "income" && commandAction == "add")
         {
             HandleIncomeAddWizard(tokens);
             return true;
         }
 
-        if (root == "limit" && action == "set")
+        if (commandName == "limit" && commandAction == "set")
         {
             HandleLimitSetWizard(tokens);
             return true;
@@ -393,21 +394,21 @@ public sealed class ConsoleUi
         while (true)
         {
             _console.Write("How much to transfer? (enter = default / percent like 25% or absolute amount) ");
-            var raw = _console.ReadLine();
-            if (raw == null || raw.Equals("cancel", StringComparison.OrdinalIgnoreCase))
+            var answer = _console.ReadLine();
+            if (answer == null || answer.Equals("cancel", StringComparison.OrdinalIgnoreCase))
             {
                 return null;
             }
 
             decimal amount;
-            if (string.IsNullOrWhiteSpace(raw))
+            if (string.IsNullOrWhiteSpace(answer))
             {
                 amount = _cushionService.DefaultTransferAmount(incomeAmount, category);
             }
-            else if (raw.TrimEnd().EndsWith("%", StringComparison.Ordinal))
+            else if (answer.TrimEnd().EndsWith("%", StringComparison.Ordinal))
             {
-                var pctRaw = raw.Trim()[..^1];
-                if (!decimal.TryParse(pctRaw, out var percent))
+                var percentageText = answer.Trim()[..^1];
+                if (!decimal.TryParse(percentageText, out var percent))
                 {
                     _console.WriteLine("Error: Invalid transfer amount.");
                     continue;
@@ -417,7 +418,7 @@ public sealed class ConsoleUi
             }
             else
             {
-                if (!decimal.TryParse(raw.Trim(), out var explicitAmount))
+                if (!decimal.TryParse(answer.Trim(), out var explicitAmount))
                 {
                     _console.WriteLine("Error: Invalid transfer amount.");
                     continue;
@@ -564,36 +565,46 @@ public sealed class ConsoleUi
 
     private void ExecuteParsedCommand(ParsedCommand command)
     {
-        var stateChanged = false;
+        var shouldPrintDailyReport = false;
 
         switch (command)
         {
             case CardAddCommand add:
                 _addCardHandler.Handle(add.Name, add.Currency, add.InitialBalance);
-                stateChanged = true;
+                shouldPrintDailyReport = true;
                 break;
             case CardListCommand:
                 PrintCards();
                 break;
             case CardSetDefaultCommand setDefault:
                 _setDefaultCardHandler.Handle(setDefault.CardId);
-                stateChanged = true;
+                shouldPrintDailyReport = true;
                 break;
-            case TransactionAddCommand trx:
-                if (trx.Type == TransactionType.Income)
+            case TransactionAddCommand transactionCommand:
+                if (transactionCommand.Type == TransactionType.Income)
                 {
-                    _addIncomeHandler.Handle(trx.Amount, trx.Category, trx.CardId, trx.Date, trx.Note);
+                    _addIncomeHandler.Handle(
+                        transactionCommand.Amount,
+                        transactionCommand.Category,
+                        transactionCommand.CardId,
+                        transactionCommand.Date,
+                        transactionCommand.Note);
                 }
                 else
                 {
-                    _addExpenseHandler.Handle(trx.Amount, trx.Category, trx.CardId, trx.Date, trx.Note);
+                    _addExpenseHandler.Handle(
+                        transactionCommand.Amount,
+                        transactionCommand.Category,
+                        transactionCommand.CardId,
+                        transactionCommand.Date,
+                        transactionCommand.Note);
                 }
 
-                stateChanged = true;
+                shouldPrintDailyReport = true;
                 break;
             case LimitSetCommand setLimit:
                 _setDailyLimitHandler.Handle(setLimit.Amount);
-                stateChanged = true;
+                shouldPrintDailyReport = true;
                 break;
             case LimitShowCommand:
                 ShowLimit();
@@ -605,7 +616,7 @@ public sealed class ConsoleUi
                 throw new InvalidOperationException("Unknown parsed command.");
         }
 
-        if (stateChanged)
+        if (shouldPrintDailyReport)
         {
             var dailyReport = _dailyReportService.Generate(_clock.Today);
             _reportPrinter.Print(dailyReport);
@@ -655,7 +666,7 @@ public sealed class ConsoleUi
         }
 
         var cards = _cardRepository.GetAll();
-        var currency = cards.FirstOrDefault(c => c.IsDefault)?.Currency
+        var currency = cards.FirstOrDefault(card => card.IsDefault)?.Currency
             ?? cards.FirstOrDefault()?.Currency
             ?? limit.Currency;
         _console.WriteLine($"Limit: {limit.Amount:F2} {currency} ({today:yyyy-MM-dd})");
@@ -796,31 +807,35 @@ public sealed class ConsoleUi
                 return null;
             }
 
-            if (int.TryParse(current.Trim(), out var parsed))
+            if (int.TryParse(current.Trim(), out var parsedCardId))
             {
-                return parsed;
+                return parsedCardId;
             }
 
-            if (Regex.IsMatch(current, "^[0-9a-fA-F-]{36}$") && Guid.TryParse(current, out var guid))
+            if (Regex.IsMatch(current, "^[0-9a-fA-F-]{36}$") &&
+                Guid.TryParse(current, out var parsedGuid))
             {
-                var tail = guid.ToString("N")[20..];
-                if (int.TryParse(tail, out var fromGuid))
+                var guidTail = parsedGuid.ToString("N")[20..];
+                if (int.TryParse(guidTail, out var cardIdFromGuid))
                 {
-                    return fromGuid;
+                    return cardIdFromGuid;
                 }
             }
 
             var cards = _cardRepository.GetAll();
-            var byExact = cards.FirstOrDefault(c => c.Name.Equals(current.Trim(), StringComparison.OrdinalIgnoreCase));
-            if (byExact != null)
+            var cardByExactName = cards.FirstOrDefault(card => 
+                card.Name.Equals(current.Trim(), StringComparison.OrdinalIgnoreCase));
+            if (cardByExactName != null)
             {
-                return byExact.Id;
+                return cardByExactName.Id;
             }
 
-            var byContains = cards.Where(c => c.Name.Contains(current, StringComparison.OrdinalIgnoreCase)).ToList();
-            if (byContains.Count == 1)
+            var cardsByPartialName = cards
+                .Where(card => card.Name.Contains(current, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+            if (cardsByPartialName.Count == 1)
             {
-                return byContains[0].Id;
+                return cardsByPartialName[0].Id;
             }
 
             _console.WriteLine("Error: Invalid card. Enter card id or card name.");
