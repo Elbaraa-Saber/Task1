@@ -137,9 +137,9 @@ public sealed class ConsoleUi
         _onboardingChecked = true;
 
         var hasSeenOnboarding = _onboardingStateRepository.GetHasSeenOnboarding();
-        var cushionCard = _cushionService.FindCushionByName()
+        var cushionCard = _cushionService.FindCushionByExactName()
             ?? _addTransactionHandler.FindCushionCardLoose()
-            ?? _cushionService.FindCushionByContains();
+            ?? _cushionService.FindCushionByNameContainingCushion();
         if (cushionCard is not null)
         {
             _onboardingStateRepository.SetLastCushionDeclinedDate(null);
@@ -349,9 +349,9 @@ public sealed class ConsoleUi
             return;
         }
 
-        var cushion = _cushionService.FindCushionByName()
+        var cushion = _cushionService.FindCushionByExactName()
             ?? _addTransactionHandler.FindCushionCardLoose()
-            ?? _cushionService.FindCushionByContains();
+            ?? _cushionService.FindCushionByNameContainingCushion();
 
         if (cushion == null)
         {
@@ -400,10 +400,10 @@ public sealed class ConsoleUi
                 return null;
             }
 
-            decimal amount;
+            decimal transferAmount;
             if (string.IsNullOrWhiteSpace(answer))
             {
-                amount = _cushionService.DefaultTransferAmount(incomeAmount, category);
+                transferAmount = _cushionService.CalculateDefaultTransferAmount(incomeAmount, category);
             }
             else if (answer.TrimEnd().EndsWith("%", StringComparison.Ordinal))
             {
@@ -414,7 +414,7 @@ public sealed class ConsoleUi
                     continue;
                 }
 
-                amount = CushionService.Floor2(incomeAmount * percent / 100m);
+                transferAmount = CushionService.FloorToTwoDecimalPlaces(incomeAmount * percent / 100m);
             }
             else
             {
@@ -424,16 +424,16 @@ public sealed class ConsoleUi
                     continue;
                 }
 
-                amount = Math.Round(explicitAmount, 2, MidpointRounding.AwayFromZero);
+                transferAmount = Math.Round(explicitAmount, 2, MidpointRounding.AwayFromZero);
             }
 
-            if (amount <= 0m || amount > incomeAmount)
+            if (transferAmount <= 0m || transferAmount > incomeAmount)
             {
                 _console.WriteLine($"Error: Transfer amount must be > 0 and <= income ({UiMoneyFormatter.FormatMoneyShort(incomeAmount)} max).");
                 continue;
             }
 
-            return amount;
+            return transferAmount;
         }
     }
 
@@ -650,8 +650,8 @@ public sealed class ConsoleUi
         _console.WriteLine("Cards:");
         foreach (var card in cards)
         {
-            var marker = card.IsDefault ? " (default)" : string.Empty;
-            _console.WriteLine($"  {card.Id}: {card.Name}{marker} [{card.Currency}] {card.InitialBalance:F2}");
+            var defaultMarker = card.IsDefault ? " (default)" : string.Empty;
+            _console.WriteLine($"  {card.Id}: {card.Name}{defaultMarker} [{card.Currency}] {card.InitialBalance:F2}");
         }
     }
 
@@ -666,10 +666,11 @@ public sealed class ConsoleUi
         }
 
         var cards = _cardRepository.GetAll();
-        var currency = cards.FirstOrDefault(card => card.IsDefault)?.Currency
+        var displayCurrency = cards.FirstOrDefault(card => card.IsDefault)?.Currency
             ?? cards.FirstOrDefault()?.Currency
             ?? limit.Currency;
-        _console.WriteLine($"Limit: {limit.Amount:F2} {currency} ({today:yyyy-MM-dd})");
+
+        _console.WriteLine($"Limit: {limit.Amount:F2} {displayCurrency} ({today:yyyy-MM-dd})");
     }
 
     private string AskRequiredText(string? seed, string prompt)
@@ -815,8 +816,8 @@ public sealed class ConsoleUi
             if (Regex.IsMatch(current, "^[0-9a-fA-F-]{36}$") &&
                 Guid.TryParse(current, out var parsedGuid))
             {
-                var guidTail = parsedGuid.ToString("N")[20..];
-                if (int.TryParse(guidTail, out var cardIdFromGuid))
+                var cardIdText = parsedGuid.ToString("N")[20..];
+                if (int.TryParse(cardIdText, out var cardIdFromGuid))
                 {
                     return cardIdFromGuid;
                 }
@@ -880,11 +881,12 @@ public sealed class ConsoleUi
         return answer;
     }
 
-    private static bool TryParseFlexibleDecimal(string raw, out decimal value)
+    private static bool TryParseFlexibleDecimal(string rawValue, out decimal value)
     {
-        var normalized = raw.Trim().Replace(',', '.');
+        var normalizedValue = rawValue.Trim().Replace(',', '.');
+
         return decimal.TryParse(
-            normalized,
+            normalizedValue,
             NumberStyles.AllowLeadingSign | NumberStyles.AllowDecimalPoint,
             CultureInfo.InvariantCulture,
             out value);
