@@ -21,6 +21,7 @@ public sealed class AddExpenseHandler
         _clock = clock;
     }
 
+
     public Transaction Handle(decimal amount, string category, int? cardId, DateOnly? date, string? note)
     {
         if (amount <= 0)
@@ -36,34 +37,34 @@ public sealed class AddExpenseHandler
         int resolvedCardId;
         if (cardId.HasValue)
         {
-            var byId = _cardRepository.GetById(cardId.Value);
-            if (byId == null)
+            var selectedCard = _cardRepository.GetById(cardId.Value);
+            if (selectedCard == null)
             {
                 throw new InvalidOperationException("Card not found.");
             }
 
-            resolvedCardId = byId.Id;
+            resolvedCardId = selectedCard.Id;
         }
         else
         {
-            var defaultByStore = _cardRepository.GetDefaultByDataStore();
-            if (defaultByStore != null)
+            var defaultCardFromStore = _cardRepository.GetDefaultByDataStore();
+            if (defaultCardFromStore != null)
             {
-                resolvedCardId = defaultByStore.Id;
+                resolvedCardId = defaultCardFromStore.Id;
             }
             else
             {
-                var first = _cardRepository.GetFirst();
-                if (first == null)
+                var firstAvailableCard = _cardRepository.GetFirst();
+                if (firstAvailableCard == null)
                 {
                     throw new InvalidOperationException("No cards available.");
                 }
 
-                resolvedCardId = first.Id;
+                resolvedCardId = firstAvailableCard.Id;
             }
         }
 
-        var trx = new Transaction
+        var expenseTransaction = new Transaction
         {
             CardId = resolvedCardId,
             Amount = amount,
@@ -73,6 +74,6 @@ public sealed class AddExpenseHandler
             Type = TransactionType.Expense
         };
 
-        return _transactionRepository.Add(trx);
+        return _transactionRepository.Add(expenseTransaction);
     }
 }
