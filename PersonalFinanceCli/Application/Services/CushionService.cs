@@ -6,20 +6,76 @@ namespace PersonalFinanceCli.Application.Services;
 
 public sealed class CushionService
 {
-public const string TransferToCushionCategory="Transfer to cushion";
-public const string TransferFromIncomeCategory="Transfer from income";
+    public const string TransferToCushionCategory = "Transfer to cushion";
+    public const string TransferFromIncomeCategory = "Transfer from income";
 
-private readonly ICardRepository _cardRepository;
+    private readonly ICardRepository _cardRepository;
 
-public CushionService(ICardRepository cardRepository){_cardRepository=cardRepository;}
+    public CushionService(ICardRepository cardRepository)
+    {
+        _cardRepository=cardRepository;
+    }
 
-public Card? FindCushionByName(){var c=_cardRepository.GetAll(); return c.FirstOrDefault(z=>z.Name=="Financial cushion");}
+    public Card? FindCushionByName()
+    {
+        var cards = _cardRepository.GetAll();
 
-public Card? FindCushionByContains(){var a=_cardRepository.GetAll();return a.FirstOrDefault(q=>q.Name.Contains("cushion",StringComparison.OrdinalIgnoreCase));}
+        return cards.FirstOrDefault(card => card.Name == "Financial cushion");
+    }
 
-public Card CreateCushion(Currency currency){var e=FindCushionByName();if(e!=null){return e;}return _cardRepository.Add(new Card{Name="Financial cushion",Currency=currency,InitialBalance=0m,IsDefault=false,IsCushion=true});}
+    public Card? FindCushionByPartialName()
+    {
+        var cards = _cardRepository.GetAll();
 
-public decimal DefaultTransferAmount(decimal incomeAmount,string category){var s=category.Contains("Salary",StringComparison.OrdinalIgnoreCase);if(incomeAmount<10m){if(s){return 1m;}return 1m;}else{if(s){return Floor2(incomeAmount*0.20m);}return Floor2(incomeAmount*0.10m);}}
+        return cards.FirstOrDefault(card => 
+            card.Name.Contains("cushion", StringComparison.OrdinalIgnoreCase));
+    }
 
-public static decimal Floor2(decimal value){return Math.Floor(value*100m)/100m;}
+    public Card CreateCushion(Currency currency)
+    {
+        var existingCushionCard=FindCushionByName();
+
+        if (existingCushionCard != null)
+        {
+            return existingCushionCard;
+        }
+
+        return _cardRepository.Add(new Card
+        {
+            Name="Financial cushion",
+            Currency=currency,
+            InitialBalance=0m,
+            IsDefault=false,
+            IsCushion=true
+        });
+    }
+
+    public decimal CalculateDefaultTransferAmount(decimal incomeAmount, string category)
+    {
+        var isSalaryCategory = category.Contains("Salary", StringComparison.OrdinalIgnoreCase);
+
+        if(incomeAmount < 10m)
+        {
+            if (isSalaryCategory)
+            {
+                return 1m;
+            }
+
+            return 1m;
+        }
+        else
+        {
+            if (isSalaryCategory)
+            {
+                return FloorToTwoDecimalPlaces(incomeAmount * 0.20m);
+            }
+
+            return FloorToTwoDecimalPlaces(incomeAmount * 0.10m);
+        }
+    }
+
+    public static decimal FloorToTwoDecimalPlaces(decimal value)
+    {
+        return Math.Floor(value * 100m) / 100m;
+    }
 }
