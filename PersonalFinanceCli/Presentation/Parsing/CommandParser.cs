@@ -30,6 +30,7 @@ public sealed class CommandParser
         }
 
         var commandName = tokens[0].ToLowerInvariant();
+        
         if (commandName == Card) 
         {
             return ParseCard(tokens);
@@ -37,7 +38,9 @@ public sealed class CommandParser
 
         if (commandName == Expense || commandName == Income)
         {
-            return ParseTransaction(tokens, commandName == Income ? TransactionType.Income : TransactionType.Expense);
+            return ParseTransaction(
+                tokens,
+                commandName == Income ? TransactionType.Income : TransactionType.Expense);
         }
 
         if (commandName == Limit)
@@ -115,7 +118,7 @@ public sealed class CommandParser
             throw new InvalidOperationException("Only add is supported for transactions.");
         }
 
-        if (!decimal.TryParse(tokens[2], out var amount))
+        if (!decimal.TryParse(tokens[2], out var transactionAmount))
         {
             throw new InvalidOperationException("Invalid amount.");
         }
@@ -129,14 +132,18 @@ public sealed class CommandParser
         var options = ParseTransactionOptions(tokens, 4);
         return new TransactionAddCommand(
             transactionType,
-            amount,
+            transactionAmount,
             category,
             options.CardId,
             options.Date,
             options.Note);
     }
 
-    private static (int? CardId, DateOnly? Date, string? Note) ParseTransactionOptions(IReadOnlyList<string> tokens, int startIndex)
+    private static (
+        int? CardId,
+        DateOnly? Date,
+        string? Note)
+        ParseTransactionOptions(IReadOnlyList<string> tokens, int startIndex)
     {
         int? cardId = null;
         DateOnly? date = null;
@@ -165,7 +172,8 @@ public sealed class CommandParser
             else if (option == "--date")
             {
                 optionIndex++;
-                if (optionIndex >= tokens.Count || !DateOnly.TryParse(tokens[optionIndex], out var parsedDate))
+                if (optionIndex >= tokens.Count 
+                    || !DateOnly.TryParse(tokens[optionIndex], out var parsedDate))
                 {
                     throw new InvalidOperationException("Invalid --date value. Use YYYY-MM-DD.");
                 }
@@ -200,12 +208,13 @@ public sealed class CommandParser
             return numericId;
         }
 
-        if (Regex.IsMatch(cardArgument, "^[0-9a-fA-F-]{36}$") && Guid.TryParse(cardArgument, out var parsedGuid))
+        if (Regex.IsMatch(cardArgument, "^[0-9a-fA-F-]{36}$") 
+            && Guid.TryParse(cardArgument, out var parsedGuid))
         {
-            var tail = parsedGuid.ToString("N")[20..];
-            if (int.TryParse(tail, out var fromGuid))
+            var cardIdText = parsedGuid.ToString("N")[20..];
+            if (int.TryParse(cardIdText, out var cardIdFromGuid))
             {
-                return fromGuid;
+                return cardIdFromGuid;
             }
         }
 
@@ -258,7 +267,8 @@ public sealed class CommandParser
             if (option == "--date")
             {
                 optionIndex++;
-                if (optionIndex >= tokens.Count || !DateOnly.TryParse(tokens[optionIndex], out var parsedDate))
+                if (optionIndex >= tokens.Count 
+                    || !DateOnly.TryParse(tokens[optionIndex], out var parsedDate))
                 {
                     throw new InvalidOperationException("Invalid --date value. Use YYYY-MM-DD.");
                 }
@@ -276,11 +286,11 @@ public sealed class CommandParser
         return new ReportDayCommand(date);
     }
 
-    private static bool TryParseFlexibleDecimal(string raw, out decimal value)
+    private static bool TryParseFlexibleDecimal(string rawValue, out decimal value)
     {
-        var normalized = raw.Trim().Replace(',', '.');
+        var normalizedValue = rawValue.Trim().Replace(',', '.');
         return decimal.TryParse(
-            normalized,
+            normalizedValue,
             NumberStyles.AllowLeadingSign | NumberStyles.AllowDecimalPoint,
             CultureInfo.InvariantCulture,
             out value);
