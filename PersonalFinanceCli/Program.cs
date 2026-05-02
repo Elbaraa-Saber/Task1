@@ -13,27 +13,43 @@ public static class Program
     public static int Main(string[] args)
     {
         var console = new SystemConsole();
-        var dataPath = Path.Combine(Directory.GetCurrentDirectory(), "data.json");
+        var dataFilePath = Path.Combine(Directory.GetCurrentDirectory(), "data.json");
 
-        var store = new JsonDataStore(dataPath);
-        var cardRepository = new JsonCardRepository(store);
-        var transactionRepository = new JsonTransactionRepository(store);
-        var limitRepository = new JsonLimitRepository(store);
-        var onboardingStateRepository = new JsonOnboardingStateRepository(store);
+        var dataStore = new JsonDataStore(dataFilePath);
+        var cardRepository = new JsonCardRepository(dataStore);
+        var transactionRepository = new JsonTransactionRepository(dataStore);
+        var limitRepository = new JsonLimitRepository(dataStore);
+        var onboardingStateRepository = new JsonOnboardingStateRepository(dataStore);
         var clock = new SystemClock();
 
         var parser = new CommandParser();
         var addCardHandler = new AddCardHandler(cardRepository);
         var setDefaultCardHandler = new SetDefaultCardHandler(cardRepository);
-        var addTransactionHandler = new AddTransactionHandler(transactionRepository, cardRepository, clock);
+        var addTransactionHandler = new AddTransactionHandler(
+            transactionRepository,
+            cardRepository,
+            clock);
         var addIncomeHandler = new AddIncomeHandler(addTransactionHandler);
-        var addExpenseHandler = new AddExpenseHandler(transactionRepository, cardRepository, clock);
-        var setDailyLimitHandler = new SetDailyLimitHandler(limitRepository, cardRepository, clock);
-        var dailyReportService = new DailyReportService(cardRepository, transactionRepository, limitRepository);
+        var addExpenseHandler = new AddExpenseHandler(
+            transactionRepository,
+            cardRepository,
+            clock);
+        var setDailyLimitHandler = new SetDailyLimitHandler(
+            limitRepository,
+            cardRepository,
+            clock);
+        var dailyReportService = new DailyReportService(
+            cardRepository,
+            transactionRepository,
+            limitRepository);
         var cushionService = new CushionService(cardRepository);
-        var reportPrinter = new ReportPrinter(console.Out, cardRepository, transactionRepository, limitRepository);
+        var reportPrinter = new ReportPrinter(
+            console.Out,
+            cardRepository,
+            transactionRepository,
+            limitRepository);
 
-        var ui = new ConsoleUi(
+        var consoleUi = new ConsoleUi(
             parser,
             addCardHandler,
             setDefaultCardHandler,
@@ -52,10 +68,10 @@ public static class Program
 
         if (args.Length > 0)
         {
-            return ui.Execute(args);
+            return consoleUi.Execute(args);
         }
 
-        ui.RunInteractiveLoop();
+        consoleUi.RunInteractiveLoop();
         return 0;
     }
 }
