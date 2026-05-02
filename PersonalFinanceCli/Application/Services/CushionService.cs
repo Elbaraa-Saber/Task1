@@ -13,17 +13,17 @@ public sealed class CushionService
 
     public CushionService(ICardRepository cardRepository)
     {
-        _cardRepository=cardRepository;
+        _cardRepository = cardRepository;
     }
 
-    public Card? FindCushionByName()
+    public Card? FindCushionByExactName()
     {
         var cards = _cardRepository.GetAll();
 
         return cards.FirstOrDefault(card => card.Name == "Financial cushion");
     }
 
-    public Card? FindCushionByPartialName()
+    public Card? FindCushionByNameContainingCushion()
     {
         var cards = _cardRepository.GetAll();
 
@@ -33,7 +33,7 @@ public sealed class CushionService
 
     public Card CreateCushion(Currency currency)
     {
-        var existingCushionCard=FindCushionByName();
+        var existingCushionCard = FindCushionByExactName();
 
         if (existingCushionCard != null)
         {
