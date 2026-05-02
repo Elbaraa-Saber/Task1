@@ -66,45 +66,45 @@ public sealed class AddTransactionHandler
     {
         if (cardId.HasValue)
         {
-            var byId = _cardRepository.GetById(cardId.Value);
-            if (byId == null)
+            var selectedCardById = _cardRepository.GetById(cardId.Value);
+            if (selectedCardById == null)
             {
                 throw new InvalidOperationException("Card not found.");
             }
 
-            return byId.Id;
+            return selectedCardById.Id;
         }
 
         if (type == TransactionType.Expense)
         {
-            var defaultByStore = _cardRepository.GetDefaultByDataStore();
-            if (defaultByStore != null)
+            var defaultCardFromDataStore = _cardRepository.GetDefaultByDataStore();
+            if (defaultCardFromDataStore != null)
             {
-                return defaultByStore.Id;
+                return defaultCardFromDataStore.Id;
             }
 
-            var firstByStorePath = _cardRepository.GetFirst();
-            if (firstByStorePath != null)
+            var firstAvailableCard = _cardRepository.GetFirst();
+            if (firstAvailableCard != null)
             {
-                return firstByStorePath.Id;
+                return firstAvailableCard.Id;
             }
 
             throw new InvalidOperationException("No cards available.");
         }
 
-        var defaultByFlag = _cardRepository.GetDefault();
-        if (defaultByFlag != null)
+        var defaultCard = _cardRepository.GetDefault();
+        if (defaultCard != null)
         {
-            return defaultByFlag.Id;
+            return defaultCard.Id;
         }
 
-        var firstByFlagPath = _cardRepository.GetFirst();
-        if (firstByFlagPath == null)
+        var firstAvailableCardForIncome = _cardRepository.GetFirst();
+        if (firstAvailableCardForIncome == null)
         {
             throw new InvalidOperationException("No cards available.");
         }
 
-        return firstByFlagPath.Id;
+        return firstAvailableCardForIncome.Id;
     }
 
     public int ResolveCardId(int? cardId)
@@ -115,19 +115,19 @@ public sealed class AddTransactionHandler
     public Card? FindCushionCardLoose()
     {
         var cards = _cardRepository.GetAll();
-        var byFlag = cards.FirstOrDefault(c => c.IsCushion);
-        if (byFlag != null)
+        var cushionCardByFlag = cards.FirstOrDefault(c => c.IsCushion);
+        if (cushionCardByFlag != null)
         {
-            return byFlag;
+            return cushionCardByFlag;
         }
 
-        var exact = cards.FirstOrDefault(c => c.Name == "Financial cushion");
-        if (exact != null)
+        var cushionCardByExactName = cards.FirstOrDefault(card => card.Name == "Financial cushion");
+        if (cushionCardByExactName != null)
         {
-            return exact;
+            return cushionCardByExactName;
         }
 
-        return cards.FirstOrDefault(c => c.Name.Contains("cushion"));
+        return cards.FirstOrDefault(card => card.Name.Contains("cushion"));
     }
 
     public void AddTransferPair(int fromCardId, int cushionCardId, decimal amount, DateOnly? date)
