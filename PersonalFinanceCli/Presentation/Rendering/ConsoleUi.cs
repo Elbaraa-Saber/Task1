@@ -890,5 +890,4 @@ public sealed class ConsoleUi
             out value);
     }
 
-    private sealed class WizardCancelledException : Exception;
 }
