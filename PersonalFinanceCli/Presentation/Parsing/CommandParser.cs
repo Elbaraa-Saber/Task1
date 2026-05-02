@@ -1,6 +1,6 @@
-using PersonalFinanceCli.Domain.ValueObjects;
 using System.Globalization;
 using System.Text.RegularExpressions;
+using PersonalFinanceCli.Domain.ValueObjects;
 
 namespace PersonalFinanceCli.Presentation.Parsing;
 
@@ -29,23 +29,23 @@ public sealed class CommandParser
             throw new InvalidOperationException("Command is empty.");
         }
 
-        var root = tokens[0].ToLowerInvariant();
-        if (root == Card) 
+        var commandName = tokens[0].ToLowerInvariant();
+        if (commandName == Card) 
         {
             return ParseCard(tokens);
         }
 
-        if (root == Expense || root == Income)
+        if (commandName == Expense || commandName == Income)
         {
-            return ParseTransaction(tokens, root == Income ? TransactionType.Income : TransactionType.Expense);
+            return ParseTransaction(tokens, commandName == Income ? TransactionType.Income : TransactionType.Expense);
         }
 
-        if (root == Limit)
+        if (commandName == Limit)
         {
             return ParseLimit(tokens);
         }
 
-        if (root == Report)
+        if (commandName == Report)
         {
             return ParseReport(tokens);
         }
@@ -60,15 +60,15 @@ public sealed class CommandParser
             throw new InvalidOperationException("Card command is incomplete.");
         }
 
-        var action = tokens[1].ToLowerInvariant();
-        if (action == "add")
+        var cardAction = tokens[1].ToLowerInvariant();
+        if (cardAction == "add")
         {
             if (tokens.Count < 4)
             {
                 throw new InvalidOperationException("card add requires: card add \"name\" <currency> [initialBalance].");
             }
 
-            decimal? initial = null;
+            decimal? initialBalance = null;
             if (tokens.Count >= 5)
             {
                 if (!TryParseFlexibleDecimal(tokens[4], out var value))
@@ -76,18 +76,18 @@ public sealed class CommandParser
                     throw new InvalidOperationException("Invalid initialBalance.");
                 }
 
-                initial = value;
+                initialBalance = value;
             }
 
-            return new CardAddCommand(tokens[2], tokens[3], initial);
+            return new CardAddCommand(tokens[2], tokens[3], initialBalance);
         }
 
-        if (action == "list")
+        if (cardAction == "list")
         {
             return new CardListCommand();
         }
 
-        if (action == "set-default")
+        if (cardAction == "set-default")
         {
             if (tokens.Count < 3 || !int.TryParse(tokens[2], out var cardId))
             {
@@ -100,7 +100,9 @@ public sealed class CommandParser
         throw new InvalidOperationException("Unknown card command.");
     }
 
-    private static ParsedCommand ParseTransaction(IReadOnlyList<string> tokens, TransactionType type)
+    private static ParsedCommand ParseTransaction(
+        IReadOnlyList<string> tokens,
+        TransactionType transactionType)
     {
         if (tokens.Count < 4)
         {
@@ -118,15 +120,15 @@ public sealed class CommandParser
             throw new InvalidOperationException("Invalid amount.");
         }
 
-        var category = type == TransactionType.Expense ? tokens[3].Trim() : tokens[3];
-        if (type == TransactionType.Expense && category.Length == 0)
+        var category = transactionType == TransactionType.Expense ? tokens[3].Trim() : tokens[3];
+        if (transactionType == TransactionType.Expense && category.Length == 0)
         {
             throw new InvalidOperationException("Category cannot be empty.");
         }
 
         var options = ParseTransactionOptions(tokens, 4);
         return new TransactionAddCommand(
-            type,
+            transactionType,
             amount,
             category,
             options.CardId,
@@ -140,19 +142,19 @@ public sealed class CommandParser
         DateOnly? date = null;
         string? note = null;
 
-        var i = startIndex;
-        while (i < tokens.Count)
+        var optionIndex = startIndex;
+        while (optionIndex < tokens.Count)
         {
-            var option = tokens[i];
+            var option = tokens[optionIndex];
             if (option == "--card")
             {
-                i++;
-                if (i >= tokens.Count)
+                optionIndex++;
+                if (optionIndex >= tokens.Count)
                 {
                     throw new InvalidOperationException("Invalid --card value.");
                 }
 
-                var parsedCardId = ResolveCardFromArgs(tokens[i]);
+                var parsedCardId = ResolveCardFromArgs(tokens[optionIndex]);
                 if (!parsedCardId.HasValue)
                 {
                     throw new InvalidOperationException("Invalid --card value.");
@@ -162,8 +164,8 @@ public sealed class CommandParser
             }
             else if (option == "--date")
             {
-                i++;
-                if (i >= tokens.Count || !DateOnly.TryParse(tokens[i], out var parsedDate))
+                optionIndex++;
+                if (optionIndex >= tokens.Count || !DateOnly.TryParse(tokens[optionIndex], out var parsedDate))
                 {
                     throw new InvalidOperationException("Invalid --date value. Use YYYY-MM-DD.");
                 }
@@ -172,33 +174,33 @@ public sealed class CommandParser
             }
             else if (option == "--note")
             {
-                i++;
-                if (i >= tokens.Count)
+                optionIndex++;
+                if (optionIndex >= tokens.Count)
                 {
                     throw new InvalidOperationException("Invalid --note value.");
                 }
 
-                note = tokens[i];
+                note = tokens[optionIndex];
             }
             else
             {
                 throw new InvalidOperationException($"Unknown option {option}.");
             }
 
-            i++;
+            optionIndex++;
         }
 
         return (cardId, date, note);
     }
 
-    public static int? ResolveCardFromArgs(string raw)
+    public static int? ResolveCardFromArgs(string cardArgument)
     {
-        if (int.TryParse(raw, out var numericId))
+        if (int.TryParse(cardArgument, out var numericId))
         {
             return numericId;
         }
 
-        if (Regex.IsMatch(raw, "^[0-9a-fA-F-]{36}$") && Guid.TryParse(raw, out var parsedGuid))
+        if (Regex.IsMatch(cardArgument, "^[0-9a-fA-F-]{36}$") && Guid.TryParse(cardArgument, out var parsedGuid))
         {
             var tail = parsedGuid.ToString("N")[20..];
             if (int.TryParse(tail, out var fromGuid))
@@ -217,8 +219,8 @@ public sealed class CommandParser
             throw new InvalidOperationException("Limit command is incomplete.");
         }
 
-        var action = tokens[1].ToLowerInvariant();
-        if (action == "set")
+        var limitAction = tokens[1].ToLowerInvariant();
+        if (limitAction == "set")
         {
             if (tokens.Count < 3 || !decimal.TryParse(tokens[2], out var amount))
             {
@@ -228,7 +230,7 @@ public sealed class CommandParser
             return new LimitSetCommand(amount);
         }
 
-        if (action == "show")
+        if (limitAction == "show")
         {
             return new LimitShowCommand();
         }
@@ -249,14 +251,14 @@ public sealed class CommandParser
         }
 
         DateOnly? date = null;
-        var i = 2;
-        while (i < tokens.Count)
+        var optionIndex = 2;
+        while (optionIndex < tokens.Count)
         {
-            var option = tokens[i];
+            var option = tokens[optionIndex];
             if (option == "--date")
             {
-                i++;
-                if (i >= tokens.Count || !DateOnly.TryParse(tokens[i], out var parsedDate))
+                optionIndex++;
+                if (optionIndex >= tokens.Count || !DateOnly.TryParse(tokens[optionIndex], out var parsedDate))
                 {
                     throw new InvalidOperationException("Invalid --date value. Use YYYY-MM-DD.");
                 }
@@ -268,7 +270,7 @@ public sealed class CommandParser
                 throw new InvalidOperationException($"Unknown option {option}.");
             }
 
-            i++;
+            optionIndex++;
         }
 
         return new ReportDayCommand(date);
@@ -284,25 +286,3 @@ public sealed class CommandParser
             out value);
     }
 }
-
-public abstract record ParsedCommand;
-
-public sealed record CardAddCommand(string Name, string Currency, decimal? InitialBalance) : ParsedCommand;
-
-public sealed record CardListCommand : ParsedCommand;
-
-public sealed record CardSetDefaultCommand(int CardId) : ParsedCommand;
-
-public sealed record TransactionAddCommand(
-    TransactionType Type,
-    decimal Amount,
-    string Category,
-    int? CardId,
-    DateOnly? Date,
-    string? Note) : ParsedCommand;
-
-public sealed record LimitSetCommand(decimal Amount) : ParsedCommand;
-
-public sealed record LimitShowCommand : ParsedCommand;
-
-public sealed record ReportDayCommand(DateOnly? Date) : ParsedCommand;
