@@ -8,28 +8,30 @@ public sealed class WizardOptionCollector
 
     public WizardOptions Collect(IReadOnlyList<string> tokens, int startIndex)
     {
-        string? cardRaw = null;
+        string? rawCard = null;
         DateOnly? date = null;
         string? note = null;
 
-        var i = startIndex;
-        while (i < tokens.Count)
+        var optionIndex = startIndex;
+        while (optionIndex < tokens.Count)
         {
-            var option = tokens[i];
+            var option = tokens[optionIndex];
             if (option == "--card")
             {
-                i++;
-                cardRaw = i < tokens.Count ? tokens[i] : null;
-                if (string.IsNullOrWhiteSpace(cardRaw))
+                optionIndex++;
+                rawCard = optionIndex < tokens.Count ? tokens[optionIndex] : null;
+                if (string.IsNullOrWhiteSpace(rawCard))
                 {
                     return new WizardOptions(null, null, null, "Invalid --card value.");
                 }
             }
             else if (option == "--date")
             {
-                i++;
-                var rawDate = i < tokens.Count ? tokens[i] : null;
-                if (string.IsNullOrWhiteSpace(rawDate) || !StrictDateRegex.IsMatch(rawDate) || !DateOnly.TryParse(rawDate, out var parsedDate))
+                optionIndex++;
+                var dateText = optionIndex < tokens.Count ? tokens[optionIndex] : null;
+                if (string.IsNullOrWhiteSpace(dateText) 
+                    || !StrictDateRegex.IsMatch(dateText) 
+                    || !DateOnly.TryParse(dateText, out var parsedDate))
                 {
                     return new WizardOptions(null, null, null, "Invalid --date value. Use strict YYYY-MM-DD.");
                 }
@@ -38,30 +40,29 @@ public sealed class WizardOptionCollector
             }
             else if (option == "--note")
             {
-                i++;
-                if (i >= tokens.Count)
+                optionIndex++;
+                if (optionIndex >= tokens.Count)
                 {
                     return new WizardOptions(null, null, null, "Invalid --note value.");
                 }
 
-                var rawNote = tokens[i];
-                if (!rawNote.Contains(' '))
+                var noteText = tokens[optionIndex];
+                if (!noteText.Contains(' '))
                 {
                     return new WizardOptions(null, null, null, "Wizard requires quoted note for --note.");
                 }
 
-                note = rawNote;
+                note = noteText;
             }
             else
             {
                 return new WizardOptions(null, null, null, $"Unknown option {option}.");
             }
 
-            i++;
+            optionIndex++;
         }
 
-        return new WizardOptions(cardRaw, date, note, null);
+        return new WizardOptions(rawCard, date, note, null);
     }
 }
 
-public readonly record struct WizardOptions(string? CardRaw, DateOnly? Date, string? Note, string? Error);
