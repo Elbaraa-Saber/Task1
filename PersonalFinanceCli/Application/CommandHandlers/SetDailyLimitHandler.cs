@@ -9,30 +9,33 @@ public sealed class SetDailyLimitHandler
     private readonly ICardRepository _cardRepository;
     private readonly IClock _clock;
 
-    public SetDailyLimitHandler(ILimitRepository limitRepository, ICardRepository cardRepository, IClock clock)
+    public SetDailyLimitHandler(
+        ILimitRepository limitRepository,
+        ICardRepository cardRepository,
+        IClock clock)
     {
         _limitRepository = limitRepository;
         _cardRepository = cardRepository;
         _clock = clock;
     }
 
-    public void Handle(decimal amount)
+    public void Handle(decimal dailyLimitAmount)
     {
-        if (amount <= 0)
+        if (dailyLimitAmount <= 0)
         {
             throw new InvalidOperationException("Limit must be > 0.");
         }
 
-        var cards = _cardRepository.GetAll();
-        if (cards.Count == 0)
+        var existingCards = _cardRepository.GetAll();
+        if (existingCards.Count == 0)
         {
             throw new InvalidOperationException("Cannot set limit without cards.");
         }
 
-        var currency = _cardRepository.GetDefault()?.Currency
+        var limitCurrency = _cardRepository.GetDefault()?.Currency
             ?? _cardRepository.GetFirst()?.Currency
-            ?? cards[0].Currency;
+            ?? existingCards[0].Currency;
 
-        _limitRepository.Upsert(_clock.Today, amount, currency);
+        _limitRepository.Upsert(_clock.Today, dailyLimitAmount, limitCurrency);
     }
 }

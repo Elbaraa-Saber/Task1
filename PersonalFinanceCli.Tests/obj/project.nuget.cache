@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "575ocebGGE8=",
+  "dgSpecHash": "fmfP6rX+4mg=",
   "success": true,
-  "projectFilePath": "D:\\files\\Task1\\PersonalFinanceCli.Tests\\PersonalFinanceCli.Tests.csproj",
+  "projectFilePath": "D:\\university\\refactoring\\Task1\\PersonalFinanceCli.Tests\\PersonalFinanceCli.Tests.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\baraa\\.nuget\\packages\\coverlet.collector\\6.0.2\\coverlet.collector.6.0.2.nupkg.sha512",
     "C:\\Users\\baraa\\.nuget\\packages\\microsoft.codecoverage\\17.10.0\\microsoft.codecoverage.17.10.0.nupkg.sha512",

@@ -23,84 +23,87 @@ public sealed class DailyReportService
     public DailyReport Generate(DateOnly date)
     {
         var cards = _cardRepository.GetAll();
-        var currency = cards.FirstOrDefault(c => c.IsDefault)?.Currency
+        var reportCurrency = cards.FirstOrDefault(card => card.IsDefault)?.Currency
             ?? cards.FirstOrDefault()?.Currency
             ?? Currency.RUB;
 
-        var cardIds = cards.Where(c => c.Currency == currency).Select(c => c.Id).ToHashSet();
+        var cardIdsInReportCurrency = cards
+            .Where(card => card.Currency == reportCurrency).Select(card => card.Id).ToHashSet();
         var allTransactions = _transactionRepository.GetAll();
 
-        decimal income = 0m;
-        decimal expense = 0m;
-        var categoryTotals = new Dictionary<string, decimal>(StringComparer.OrdinalIgnoreCase);
+        decimal totalIncome = 0m;
+        decimal totalExpense = 0m;
+        var categoryExpenseTotals = new Dictionary<string, decimal>(StringComparer.OrdinalIgnoreCase);
 
-        foreach (var t in allTransactions)
+        foreach (var transaction in allTransactions)
         {
-            if (!cardIds.Contains(t.CardId) || t.Date != date)
+            if (!cardIdsInReportCurrency.Contains(transaction.CardId) || transaction.Date != date)
             {
                 continue;
             }
 
-            if (t.Type == TransactionType.Income)
+            if (transaction.Type == TransactionType.Income)
             {
-                income += t.Amount;
+                totalIncome += transaction.Amount;
             }
             else
             {
-                expense += t.Amount;
-                if (categoryTotals.ContainsKey(t.Category))
+                totalExpense += transaction.Amount;
+                if (categoryExpenseTotals.ContainsKey(transaction.Category))
                 {
-                    categoryTotals[t.Category] += t.Amount;
+                    categoryExpenseTotals[transaction.Category] += transaction.Amount;
                 }
                 else
                 {
-                    categoryTotals[t.Category] = t.Amount;
+                    categoryExpenseTotals[transaction.Category] = transaction.Amount;
                 }
             }
         }
 
-        var limit = _limitRepository.GetByDate(date);
-        var limitPercentByCast = 0;
-        if (limit is { Amount: > 0 })
+        var dailyLimit = _limitRepository.GetByDate(date);
+        var limitUsagePercentage = 0;
+        if (dailyLimit is { Amount: > 0 })
         {
-            limitPercentByCast = (int)((expense / limit.Amount) * 100m);
+            limitUsagePercentage = (int)((totalExpense / dailyLimit.Amount) * 100m);
         }
 
-        if (limitPercentByCast < 0)
+        if (limitUsagePercentage < 0)
         {
-            limitPercentByCast = 0;
+            limitUsagePercentage = 0;
         }
 
-        var balances = new List<CardBalanceLine>();
+        var cardBalanceLines = new List<CardBalanceLine>();
         foreach (var card in cards)
         {
             decimal balance = card.InitialBalance;
-            foreach (var trx in allTransactions.Where(x => x.CardId == card.Id))
+            foreach (var transaction in allTransactions.Where(x => x.CardId == card.Id))
             {
-                if (trx.Type == TransactionType.Income)
+                if (transaction.Type == TransactionType.Income)
                 {
-                    balance += trx.Amount;
+                    balance += transaction.Amount;
                 }
                 else
                 {
-                    balance -= trx.Amount;
+                    balance -= transaction.Amount;
                 }
             }
 
-            balances.Add(new CardBalanceLine(card.Id, card.Name, card.IsDefault, balance, card.Currency));
+            cardBalanceLines.Add(new CardBalanceLine(
+                card.Id,
+                card.Name,
+                card.IsDefault,
+                balance,
+                card.Currency));
         }
 
-        return new DailyReport(date, currency, income, expense, categoryTotals, balances, limit);
+        return new DailyReport(
+            date,
+            reportCurrency,
+            totalIncome,
+            totalExpense,
+            categoryExpenseTotals,
+            cardBalanceLines,
+            dailyLimit);
     }
 }
 
-public sealed record DailyReport(
-    DateOnly Date,
-    Currency Currency,
-    decimal Income,
-    decimal Expense,
-    IReadOnlyDictionary<string, decimal> CategoryExpenses,
-    IReadOnlyList<CardBalanceLine> Cards,
-    DailyLimit? Limit);
-
-public sealed record CardBalanceLine(int CardId, string CardName, bool IsDefault, decimal Balance, Currency Currency);
