@@ -39,7 +39,10 @@ public static class Program
             cardRepository,
             transactionRepository,
             limitRepository);
-        var cushionService = new CushionService(cardRepository);
+        var cushionService = new CushionService(
+            cardRepository,
+            transactionRepository,
+            clock);
         var reportPrinter = new ReportPrinter(
             console.Out,
             cardRepository,

@@ -138,7 +138,7 @@ public sealed class ConsoleUi
 
         var hasSeenOnboarding = _onboardingStateRepository.GetHasSeenOnboarding();
         var cushionCard = _cushionService.FindCushionByExactName()
-            ?? _addTransactionHandler.FindCushionCardLoose()
+            ?? _cushionService.FindCushionCardLoose()
             ?? _cushionService.FindCushionByNameContainingCushion();
         if (cushionCard is not null)
         {
@@ -350,7 +350,7 @@ public sealed class ConsoleUi
         }
 
         var cushion = _cushionService.FindCushionByExactName()
-            ?? _addTransactionHandler.FindCushionCardLoose()
+            ?? _cushionService.FindCushionCardLoose()
             ?? _cushionService.FindCushionByNameContainingCushion();
 
         if (cushion == null)
@@ -386,7 +386,7 @@ public sealed class ConsoleUi
             return;
         }
 
-        _addTransactionHandler.AddTransferPair(sourceCardId, cushion.Id, transferAmount.Value, date);
+        _cushionService.AddTransferPair(sourceCardId, cushion.Id, transferAmount.Value, date);
     }
 
     private decimal? AskTransferAmount(decimal incomeAmount, string category)

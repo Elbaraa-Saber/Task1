@@ -41,7 +41,10 @@ internal sealed class TestAppContext : IDisposable
         var addExpenseHandler = new AddExpenseHandler(addTransactionHandler);
         var setDailyLimitHandler = new SetDailyLimitHandler(LimitRepository, CardRepository, Clock);
         var dailyReportService = new DailyReportService(CardRepository, TransactionRepository, LimitRepository);
-        var cushionService = new CushionService(CardRepository);
+        var cushionService = new CushionService(
+            CardRepository,
+            TransactionRepository,
+            Clock);
         var reportPrinter = new ReportPrinter(Console.Out, CardRepository, TransactionRepository, LimitRepository);
 
         Ui = new ConsoleUi(
