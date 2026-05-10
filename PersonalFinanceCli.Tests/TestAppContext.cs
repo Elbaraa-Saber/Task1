@@ -38,7 +38,7 @@ internal sealed class TestAppContext : IDisposable
         var setDefaultCardHandler = new SetDefaultCardHandler(CardRepository);
         var addTransactionHandler = new AddTransactionHandler(TransactionRepository, CardRepository, Clock);
         var addIncomeHandler = new AddIncomeHandler(addTransactionHandler);
-        var addExpenseHandler = new AddExpenseHandler(TransactionRepository, CardRepository, Clock);
+        var addExpenseHandler = new AddExpenseHandler(addTransactionHandler);
         var setDailyLimitHandler = new SetDailyLimitHandler(LimitRepository, CardRepository, Clock);
         var dailyReportService = new DailyReportService(CardRepository, TransactionRepository, LimitRepository);
         var cushionService = new CushionService(CardRepository);

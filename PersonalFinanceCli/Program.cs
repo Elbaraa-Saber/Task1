@@ -30,10 +30,7 @@ public static class Program
             cardRepository,
             clock);
         var addIncomeHandler = new AddIncomeHandler(addTransactionHandler);
-        var addExpenseHandler = new AddExpenseHandler(
-            transactionRepository,
-            cardRepository,
-            clock);
+        var addExpenseHandler = new AddExpenseHandler(addTransactionHandler);
         var setDailyLimitHandler = new SetDailyLimitHandler(
             limitRepository,
             cardRepository,
