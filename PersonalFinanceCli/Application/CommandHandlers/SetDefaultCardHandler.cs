@@ -13,8 +13,8 @@ public sealed class SetDefaultCardHandler
 
     public void Handle(int cardId)
     {
-        var existingCard = _cardRepository.GetById(cardId);
-        if (existingCard is null)
+        var card = _cardRepository.GetById(cardId);
+        if (card is null)
         {
             throw new InvalidOperationException("Card not found.");
         }

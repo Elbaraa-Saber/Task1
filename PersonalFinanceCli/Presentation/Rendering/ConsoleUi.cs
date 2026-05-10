@@ -1,5 +1,3 @@
-using System.Globalization;
-using System.Text.RegularExpressions;
 using PersonalFinanceCli.Application.CommandHandlers;
 using PersonalFinanceCli.Application.Repositories;
 using PersonalFinanceCli.Application.Services;
@@ -7,6 +5,8 @@ using PersonalFinanceCli.Domain.Services;
 using PersonalFinanceCli.Domain.ValueObjects;
 using PersonalFinanceCli.Infrastructure.Time;
 using PersonalFinanceCli.Presentation.Parsing;
+using System.Globalization;
+using System.Text.RegularExpressions;
 
 namespace PersonalFinanceCli.Presentation.Rendering;
 
@@ -116,8 +116,8 @@ public sealed class ConsoleUi
 
             try
             {
-                var parsedCommand = _parser.Parse(line);
-                ExecuteParsedCommand(parsedCommand);
+                var parsed = _parser.Parse(line);
+                ExecuteParsedCommand(parsed);
             }
             catch (Exception ex)
             {
@@ -136,11 +136,11 @@ public sealed class ConsoleUi
 
         _onboardingChecked = true;
 
-        var hasSeenOnboarding = _onboardingStateRepository.GetHasSeenOnboarding();
-        var cushionCard = _cushionService.FindCushionByExactName()
+        var hasSeen = _onboardingStateRepository.GetHasSeenOnboarding();
+        var cushion = _cushionService.FindCushionByName()
             ?? _addTransactionHandler.FindCushionCardLoose()
-            ?? _cushionService.FindCushionByNameContainingCushion();
-        if (cushionCard is not null)
+            ?? _cushionService.FindCushionByContains();
+        if (cushion != null)
         {
             _onboardingStateRepository.SetLastCushionDeclinedDate(null);
             _onboardingStateRepository.SetHasSeenOnboarding(true);
@@ -148,14 +148,13 @@ public sealed class ConsoleUi
         }
 
         var cards = _cardRepository.GetAll();
-        if (hasSeenOnboarding && cards.Count == 0)
+        if (hasSeen && cards.Count == 0)
         {
             return;
         }
 
-        var lastCushionDeclinedDate = _onboardingStateRepository.GetLastCushionDeclinedDate();
-        if (lastCushionDeclinedDate.HasValue && 
-            _clock.Today < lastCushionDeclinedDate.Value.AddDays(14))
+        var lastDeclined = _onboardingStateRepository.GetLastCushionDeclinedDate();
+        if (lastDeclined.HasValue && _clock.Today < lastDeclined.Value.AddDays(14))
         {
             return;
         }
@@ -181,28 +180,28 @@ public sealed class ConsoleUi
             return false;
         }
 
-        var commandName = tokens[0].ToLowerInvariant();
-        var commandAction = tokens[1].ToLowerInvariant();
+        var root = tokens[0].ToLowerInvariant();
+        var action = tokens[1].ToLowerInvariant();
 
-        if (commandName == "card" && commandAction == "add")
+        if (root == "card" && action == "add")
         {
             HandleCardAddWizard(tokens);
             return true;
         }
 
-        if (commandName == "expense" && commandAction == "add")
+        if (root == "expense" && action == "add")
         {
             HandleExpenseAddWizard(tokens);
             return true;
         }
 
-        if (commandName == "income" && commandAction == "add")
+        if (root == "income" && action == "add")
         {
             HandleIncomeAddWizard(tokens);
             return true;
         }
 
-        if (commandName == "limit" && commandAction == "set")
+        if (root == "limit" && action == "set")
         {
             HandleLimitSetWizard(tokens);
             return true;
@@ -349,9 +348,9 @@ public sealed class ConsoleUi
             return;
         }
 
-        var cushion = _cushionService.FindCushionByExactName()
+        var cushion = _cushionService.FindCushionByName()
             ?? _addTransactionHandler.FindCushionCardLoose()
-            ?? _cushionService.FindCushionByNameContainingCushion();
+            ?? _cushionService.FindCushionByContains();
 
         if (cushion == null)
         {
@@ -394,46 +393,46 @@ public sealed class ConsoleUi
         while (true)
         {
             _console.Write("How much to transfer? (enter = default / percent like 25% or absolute amount) ");
-            var answer = _console.ReadLine();
-            if (answer == null || answer.Equals("cancel", StringComparison.OrdinalIgnoreCase))
+            var raw = _console.ReadLine();
+            if (raw == null || raw.Equals("cancel", StringComparison.OrdinalIgnoreCase))
             {
                 return null;
             }
 
-            decimal transferAmount;
-            if (string.IsNullOrWhiteSpace(answer))
+            decimal amount;
+            if (string.IsNullOrWhiteSpace(raw))
             {
-                transferAmount = _cushionService.CalculateDefaultTransferAmount(incomeAmount, category);
+                amount = _cushionService.DefaultTransferAmount(incomeAmount, category);
             }
-            else if (answer.TrimEnd().EndsWith("%", StringComparison.Ordinal))
+            else if (raw.TrimEnd().EndsWith("%", StringComparison.Ordinal))
             {
-                var percentageText = answer.Trim()[..^1];
-                if (!decimal.TryParse(percentageText, out var percent))
+                var pctRaw = raw.Trim()[..^1];
+                if (!decimal.TryParse(pctRaw, out var percent))
                 {
                     _console.WriteLine("Error: Invalid transfer amount.");
                     continue;
                 }
 
-                transferAmount = CushionService.FloorToTwoDecimalPlaces(incomeAmount * percent / 100m);
+                amount = CushionService.Floor2(incomeAmount * percent / 100m);
             }
             else
             {
-                if (!decimal.TryParse(answer.Trim(), out var explicitAmount))
+                if (!decimal.TryParse(raw.Trim(), out var explicitAmount))
                 {
                     _console.WriteLine("Error: Invalid transfer amount.");
                     continue;
                 }
 
-                transferAmount = Math.Round(explicitAmount, 2, MidpointRounding.AwayFromZero);
+                amount = Math.Round(explicitAmount, 2, MidpointRounding.AwayFromZero);
             }
 
-            if (transferAmount <= 0m || transferAmount > incomeAmount)
+            if (amount <= 0m || amount > incomeAmount)
             {
                 _console.WriteLine($"Error: Transfer amount must be > 0 and <= income ({UiMoneyFormatter.FormatMoneyShort(incomeAmount)} max).");
                 continue;
             }
 
-            return transferAmount;
+            return amount;
         }
     }
 
@@ -565,46 +564,36 @@ public sealed class ConsoleUi
 
     private void ExecuteParsedCommand(ParsedCommand command)
     {
-        var shouldPrintDailyReport = false;
+        var stateChanged = false;
 
         switch (command)
         {
             case CardAddCommand add:
                 _addCardHandler.Handle(add.Name, add.Currency, add.InitialBalance);
-                shouldPrintDailyReport = true;
+                stateChanged = true;
                 break;
             case CardListCommand:
                 PrintCards();
                 break;
             case CardSetDefaultCommand setDefault:
                 _setDefaultCardHandler.Handle(setDefault.CardId);
-                shouldPrintDailyReport = true;
+                stateChanged = true;
                 break;
-            case TransactionAddCommand transactionCommand:
-                if (transactionCommand.Type == TransactionType.Income)
+            case TransactionAddCommand trx:
+                if (trx.Type == TransactionType.Income)
                 {
-                    _addIncomeHandler.Handle(
-                        transactionCommand.Amount,
-                        transactionCommand.Category,
-                        transactionCommand.CardId,
-                        transactionCommand.Date,
-                        transactionCommand.Note);
+                    _addIncomeHandler.Handle(trx.Amount, trx.Category, trx.CardId, trx.Date, trx.Note);
                 }
                 else
                 {
-                    _addExpenseHandler.Handle(
-                        transactionCommand.Amount,
-                        transactionCommand.Category,
-                        transactionCommand.CardId,
-                        transactionCommand.Date,
-                        transactionCommand.Note);
+                    _addExpenseHandler.Handle(trx.Amount, trx.Category, trx.CardId, trx.Date, trx.Note);
                 }
 
-                shouldPrintDailyReport = true;
+                stateChanged = true;
                 break;
             case LimitSetCommand setLimit:
                 _setDailyLimitHandler.Handle(setLimit.Amount);
-                shouldPrintDailyReport = true;
+                stateChanged = true;
                 break;
             case LimitShowCommand:
                 ShowLimit();
@@ -616,7 +605,7 @@ public sealed class ConsoleUi
                 throw new InvalidOperationException("Unknown parsed command.");
         }
 
-        if (shouldPrintDailyReport)
+        if (stateChanged)
         {
             var dailyReport = _dailyReportService.Generate(_clock.Today);
             _reportPrinter.Print(dailyReport);
@@ -650,8 +639,8 @@ public sealed class ConsoleUi
         _console.WriteLine("Cards:");
         foreach (var card in cards)
         {
-            var defaultMarker = card.IsDefault ? " (default)" : string.Empty;
-            _console.WriteLine($"  {card.Id}: {card.Name}{defaultMarker} [{card.Currency}] {card.InitialBalance:F2}");
+            var marker = card.IsDefault ? " (default)" : string.Empty;
+            _console.WriteLine($"  {card.Id}: {card.Name}{marker} [{card.Currency}] {card.InitialBalance:F2}");
         }
     }
 
@@ -666,11 +655,10 @@ public sealed class ConsoleUi
         }
 
         var cards = _cardRepository.GetAll();
-        var displayCurrency = cards.FirstOrDefault(card => card.IsDefault)?.Currency
+        var currency = cards.FirstOrDefault(c => c.IsDefault)?.Currency
             ?? cards.FirstOrDefault()?.Currency
             ?? limit.Currency;
-
-        _console.WriteLine($"Limit: {limit.Amount:F2} {displayCurrency} ({today:yyyy-MM-dd})");
+        _console.WriteLine($"Limit: {limit.Amount:F2} {currency} ({today:yyyy-MM-dd})");
     }
 
     private string AskRequiredText(string? seed, string prompt)
@@ -808,35 +796,31 @@ public sealed class ConsoleUi
                 return null;
             }
 
-            if (int.TryParse(current.Trim(), out var parsedCardId))
+            if (int.TryParse(current.Trim(), out var parsed))
             {
-                return parsedCardId;
+                return parsed;
             }
 
-            if (Regex.IsMatch(current, "^[0-9a-fA-F-]{36}$") &&
-                Guid.TryParse(current, out var parsedGuid))
+            if (Regex.IsMatch(current, "^[0-9a-fA-F-]{36}$") && Guid.TryParse(current, out var guid))
             {
-                var cardIdText = parsedGuid.ToString("N")[20..];
-                if (int.TryParse(cardIdText, out var cardIdFromGuid))
+                var tail = guid.ToString("N")[20..];
+                if (int.TryParse(tail, out var fromGuid))
                 {
-                    return cardIdFromGuid;
+                    return fromGuid;
                 }
             }
 
             var cards = _cardRepository.GetAll();
-            var cardByExactName = cards.FirstOrDefault(card => 
-                card.Name.Equals(current.Trim(), StringComparison.OrdinalIgnoreCase));
-            if (cardByExactName != null)
+            var byExact = cards.FirstOrDefault(c => c.Name.Equals(current.Trim(), StringComparison.OrdinalIgnoreCase));
+            if (byExact != null)
             {
-                return cardByExactName.Id;
+                return byExact.Id;
             }
 
-            var cardsByPartialName = cards
-                .Where(card => card.Name.Contains(current, StringComparison.OrdinalIgnoreCase))
-                .ToList();
-            if (cardsByPartialName.Count == 1)
+            var byContains = cards.Where(c => c.Name.Contains(current, StringComparison.OrdinalIgnoreCase)).ToList();
+            if (byContains.Count == 1)
             {
-                return cardsByPartialName[0].Id;
+                return byContains[0].Id;
             }
 
             _console.WriteLine("Error: Invalid card. Enter card id or card name.");
@@ -881,16 +865,15 @@ public sealed class ConsoleUi
         return answer;
     }
 
-    private static bool TryParseFlexibleDecimal(string rawValue, out decimal value)
+    private static bool TryParseFlexibleDecimal(string raw, out decimal value)
     {
-        var normalizedValue = rawValue.Trim().Replace(',', '.');
-
+        var normalized = raw.Trim().Replace(',', '.');
         return decimal.TryParse(
-            normalizedValue,
+            normalized,
             NumberStyles.AllowLeadingSign | NumberStyles.AllowDecimalPoint,
             CultureInfo.InvariantCulture,
             out value);
     }
-    private sealed class WizardCancelledException : Exception;
 
+    private sealed class WizardCancelledException : Exception;
 }

@@ -21,7 +21,6 @@ public sealed class AddExpenseHandler
         _clock = clock;
     }
 
-
     public Transaction Handle(decimal amount, string category, int? cardId, DateOnly? date, string? note)
     {
         if (amount <= 0)
@@ -37,34 +36,34 @@ public sealed class AddExpenseHandler
         int resolvedCardId;
         if (cardId.HasValue)
         {
-            var selectedCard = _cardRepository.GetById(cardId.Value);
-            if (selectedCard == null)
+            var byId = _cardRepository.GetById(cardId.Value);
+            if (byId == null)
             {
                 throw new InvalidOperationException("Card not found.");
             }
 
-            resolvedCardId = selectedCard.Id;
+            resolvedCardId = byId.Id;
         }
         else
         {
-            var defaultCardFromStore = _cardRepository.GetDefaultByDataStore();
-            if (defaultCardFromStore != null)
+            var defaultByStore = _cardRepository.GetDefaultByDataStore();
+            if (defaultByStore != null)
             {
-                resolvedCardId = defaultCardFromStore.Id;
+                resolvedCardId = defaultByStore.Id;
             }
             else
             {
-                var firstAvailableCard = _cardRepository.GetFirst();
-                if (firstAvailableCard == null)
+                var first = _cardRepository.GetFirst();
+                if (first == null)
                 {
                     throw new InvalidOperationException("No cards available.");
                 }
 
-                resolvedCardId = firstAvailableCard.Id;
+                resolvedCardId = first.Id;
             }
         }
 
-        var expenseTransaction = new Transaction
+        var trx = new Transaction
         {
             CardId = resolvedCardId,
             Amount = amount,
@@ -74,6 +73,6 @@ public sealed class AddExpenseHandler
             Type = TransactionType.Expense
         };
 
-        return _transactionRepository.Add(expenseTransaction);
+        return _transactionRepository.Add(trx);
     }
 }

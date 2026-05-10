@@ -16,11 +16,11 @@ public sealed class JsonOnboardingStateRepository : IOnboardingStateRepository
         return _store.Load().LastCushionDeclinedDate;
     }
 
-    public void SetLastCushionDeclinedDate(DateOnly? lastCushionDeclinedDate)
+    public void SetLastCushionDeclinedDate(DateOnly? date)
     {
-        var storedData = _store.Load();
-        storedData.LastCushionDeclinedDate = lastCushionDeclinedDate;
-        _store.Save(storedData);
+        var data = _store.Load();
+        data.LastCushionDeclinedDate = date;
+        _store.Save(data);
     }
 
     public bool GetHasSeenOnboarding()
@@ -28,10 +28,10 @@ public sealed class JsonOnboardingStateRepository : IOnboardingStateRepository
         return _store.Load().HasSeenOnboarding;
     }
 
-    public void SetHasSeenOnboarding(bool hasSeenOnboarding)
+    public void SetHasSeenOnboarding(bool value)
     {
         var data = _store.Load();
-        data.HasSeenOnboarding = hasSeenOnboarding;
+        data.HasSeenOnboarding = value;
         _store.Save(data);
     }
 }

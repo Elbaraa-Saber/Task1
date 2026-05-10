@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "D:\\university\\refactoring\\Task1\\PersonalFinanceCli.Tests\\PersonalFinanceCli.Tests.csproj": {}
+    "D:\\files\\Task1\\PersonalFinanceCli.Tests\\PersonalFinanceCli.Tests.csproj": {}
   },
   "projects": {
-    "D:\\university\\refactoring\\Task1\\PersonalFinanceCli.Tests\\PersonalFinanceCli.Tests.csproj": {
+    "D:\\files\\Task1\\PersonalFinanceCli.Tests\\PersonalFinanceCli.Tests.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\university\\refactoring\\Task1\\PersonalFinanceCli.Tests\\PersonalFinanceCli.Tests.csproj",
+        "projectUniqueName": "D:\\files\\Task1\\PersonalFinanceCli.Tests\\PersonalFinanceCli.Tests.csproj",
         "projectName": "PersonalFinanceCli.Tests",
-        "projectPath": "D:\\university\\refactoring\\Task1\\PersonalFinanceCli.Tests\\PersonalFinanceCli.Tests.csproj",
+        "projectPath": "D:\\files\\Task1\\PersonalFinanceCli.Tests\\PersonalFinanceCli.Tests.csproj",
         "packagesPath": "C:\\Users\\baraa\\.nuget\\packages\\",
-        "outputPath": "D:\\university\\refactoring\\Task1\\PersonalFinanceCli.Tests\\obj\\",
+        "outputPath": "D:\\files\\Task1\\PersonalFinanceCli.Tests\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -32,8 +32,8 @@
           "net8.0": {
             "targetAlias": "net8.0",
             "projectReferences": {
-              "D:\\university\\refactoring\\Task1\\PersonalFinanceCli\\PersonalFinanceCli.csproj": {
-                "projectPath": "D:\\university\\refactoring\\Task1\\PersonalFinanceCli\\PersonalFinanceCli.csproj"
+              "D:\\files\\Task1\\PersonalFinanceCli\\PersonalFinanceCli.csproj": {
+                "projectPath": "D:\\files\\Task1\\PersonalFinanceCli\\PersonalFinanceCli.csproj"
               }
             }
           }
@@ -91,14 +91,14 @@
         }
       }
     },
-    "D:\\university\\refactoring\\Task1\\PersonalFinanceCli\\PersonalFinanceCli.csproj": {
+    "D:\\files\\Task1\\PersonalFinanceCli\\PersonalFinanceCli.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\university\\refactoring\\Task1\\PersonalFinanceCli\\PersonalFinanceCli.csproj",
+        "projectUniqueName": "D:\\files\\Task1\\PersonalFinanceCli\\PersonalFinanceCli.csproj",
         "projectName": "PersonalFinanceCli",
-        "projectPath": "D:\\university\\refactoring\\Task1\\PersonalFinanceCli\\PersonalFinanceCli.csproj",
+        "projectPath": "D:\\files\\Task1\\PersonalFinanceCli\\PersonalFinanceCli.csproj",
         "packagesPath": "C:\\Users\\baraa\\.nuget\\packages\\",
-        "outputPath": "D:\\university\\refactoring\\Task1\\PersonalFinanceCli\\obj\\",
+        "outputPath": "D:\\files\\Task1\\PersonalFinanceCli\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
