@@ -45,7 +45,7 @@ internal sealed class TestAppContext : IDisposable
             CardRepository,
             TransactionRepository,
             Clock);
-        var reportPrinter = new ReportPrinter(Console.Out, CardRepository, TransactionRepository, LimitRepository);
+        var reportPrinter = new ReportPrinter(Console.Out, dailyReportService);
 
         Ui = new ConsoleUi(
             parser,

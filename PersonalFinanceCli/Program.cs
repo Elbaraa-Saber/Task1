@@ -43,11 +43,7 @@ public static class Program
             cardRepository,
             transactionRepository,
             clock);
-        var reportPrinter = new ReportPrinter(
-            console.Out,
-            cardRepository,
-            transactionRepository,
-            limitRepository);
+        var reportPrinter = new ReportPrinter(console.Out, dailyReportService);
 
         var consoleUi = new ConsoleUi(
             parser,
