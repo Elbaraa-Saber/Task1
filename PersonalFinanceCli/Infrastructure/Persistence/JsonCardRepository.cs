@@ -1,5 +1,6 @@
 using PersonalFinanceCli.Application.Repositories;
 using PersonalFinanceCli.Domain.Entities;
+using PersonalFinanceCli.Domain.Services;
 
 namespace PersonalFinanceCli.Infrastructure.Persistence;
 
@@ -36,7 +37,7 @@ public sealed class JsonCardRepository : ICardRepository
             return null;
         }
 
-        var cardId = GuidToCardId(storedData.DefaultCardId.Value);
+        var cardId = CardIdConverter.ToCardId(storedData.DefaultCardId.Value);
 
         return storedData.Cards.FirstOrDefault(card => card.Id == cardId);
     }
@@ -57,7 +58,7 @@ public sealed class JsonCardRepository : ICardRepository
         if (storedData.Cards.Count == 0)
         {
             card.IsDefault = true;
-            storedData.DefaultCardId = CardIdToGuid(card.Id);
+            storedData.DefaultCardId = CardIdConverter.ToLegacyGuid(card.Id);
         }
 
         storedData.Cards.Add(card);
@@ -75,23 +76,10 @@ public sealed class JsonCardRepository : ICardRepository
             card.IsDefault = card.Id == cardId;
         }
 
-        storedData.DefaultCardId = CardIdToGuid(cardId);
+        storedData.DefaultCardId = CardIdConverter.ToLegacyGuid(cardId);
 
         _store.Save(storedData);
     }
 
-    private static Guid CardIdToGuid(int cardId)
-    {
-        var paddedCardId = cardId.ToString("D12");
-
-        return Guid.Parse($"00000000-0000-0000-0000-{paddedCardId}");
-    }
-
-    private static int GuidToCardId(Guid guid)
-    {
-        var guidText = guid.ToString("N");
-        var cardIdText = guidText.Substring(guidText.Length - 12, 12);
-
-        return int.TryParse(cardIdText, out var cardId) ? cardId : -1;
-    }
 }
+

@@ -30,10 +30,7 @@ public static class Program
             cardRepository,
             clock);
         var addIncomeHandler = new AddIncomeHandler(addTransactionHandler);
-        var addExpenseHandler = new AddExpenseHandler(
-            transactionRepository,
-            cardRepository,
-            clock);
+        var addExpenseHandler = new AddExpenseHandler(addTransactionHandler);
         var setDailyLimitHandler = new SetDailyLimitHandler(
             limitRepository,
             cardRepository,
@@ -42,12 +39,11 @@ public static class Program
             cardRepository,
             transactionRepository,
             limitRepository);
-        var cushionService = new CushionService(cardRepository);
-        var reportPrinter = new ReportPrinter(
-            console.Out,
+        var cushionService = new CushionService(
             cardRepository,
             transactionRepository,
-            limitRepository);
+            clock);
+        var reportPrinter = new ReportPrinter(console.Out, dailyReportService);
 
         var consoleUi = new ConsoleUi(
             parser,

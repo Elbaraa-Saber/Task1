@@ -1,6 +1,6 @@
 using System.Globalization;
-using System.Text.RegularExpressions;
 using PersonalFinanceCli.Domain.ValueObjects;
+using PersonalFinanceCli.Domain.Services;
 
 namespace PersonalFinanceCli.Presentation.Parsing;
 
@@ -203,22 +203,7 @@ public sealed class CommandParser
 
     public static int? ResolveCardFromArgs(string cardArgument)
     {
-        if (int.TryParse(cardArgument, out var numericId))
-        {
-            return numericId;
-        }
-
-        if (Regex.IsMatch(cardArgument, "^[0-9a-fA-F-]{36}$") 
-            && Guid.TryParse(cardArgument, out var parsedGuid))
-        {
-            var cardIdText = parsedGuid.ToString("N")[20..];
-            if (int.TryParse(cardIdText, out var cardIdFromGuid))
-            {
-                return cardIdFromGuid;
-            }
-        }
-
-        return null;
+        return CardIdConverter.TryParseCardId(cardArgument);
     }
 
     private static ParsedCommand ParseLimit(IReadOnlyList<string> tokens)

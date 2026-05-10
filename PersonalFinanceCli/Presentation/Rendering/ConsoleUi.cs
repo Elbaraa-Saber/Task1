@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Text.RegularExpressions;
 using PersonalFinanceCli.Application.CommandHandlers;
 using PersonalFinanceCli.Application.Repositories;
 using PersonalFinanceCli.Application.Services;
@@ -138,7 +137,7 @@ public sealed class ConsoleUi
 
         var hasSeenOnboarding = _onboardingStateRepository.GetHasSeenOnboarding();
         var cushionCard = _cushionService.FindCushionByExactName()
-            ?? _addTransactionHandler.FindCushionCardLoose()
+            ?? _cushionService.FindCushionCardLoose()
             ?? _cushionService.FindCushionByNameContainingCushion();
         if (cushionCard is not null)
         {
@@ -350,7 +349,7 @@ public sealed class ConsoleUi
         }
 
         var cushion = _cushionService.FindCushionByExactName()
-            ?? _addTransactionHandler.FindCushionCardLoose()
+            ?? _cushionService.FindCushionCardLoose()
             ?? _cushionService.FindCushionByNameContainingCushion();
 
         if (cushion == null)
@@ -386,7 +385,7 @@ public sealed class ConsoleUi
             return;
         }
 
-        _addTransactionHandler.AddTransferPair(sourceCardId, cushion.Id, transferAmount.Value, date);
+        _cushionService.AddTransferPair(sourceCardId, cushion.Id, transferAmount.Value, date);
     }
 
     private decimal? AskTransferAmount(decimal incomeAmount, string category)
@@ -808,19 +807,10 @@ public sealed class ConsoleUi
                 return null;
             }
 
-            if (int.TryParse(current.Trim(), out var parsedCardId))
+            var cardIdFromArgument = CardIdConverter.TryParseCardId(current);
+            if (cardIdFromArgument.HasValue)
             {
-                return parsedCardId;
-            }
-
-            if (Regex.IsMatch(current, "^[0-9a-fA-F-]{36}$") &&
-                Guid.TryParse(current, out var parsedGuid))
-            {
-                var cardIdText = parsedGuid.ToString("N")[20..];
-                if (int.TryParse(cardIdText, out var cardIdFromGuid))
-                {
-                    return cardIdFromGuid;
-                }
+                return cardIdFromArgument.Value;
             }
 
             var cards = _cardRepository.GetAll();
