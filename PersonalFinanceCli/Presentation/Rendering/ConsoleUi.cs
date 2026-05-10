@@ -891,5 +891,6 @@ public sealed class ConsoleUi
             CultureInfo.InvariantCulture,
             out value);
     }
+    private sealed class WizardCancelledException : Exception;
 
 }
